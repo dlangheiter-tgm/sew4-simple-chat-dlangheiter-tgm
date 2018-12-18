@@ -33,6 +33,8 @@ public class Controller {
 
     @FXML
     protected void handleMessageButtonAction(ActionEvent event) {
+        this.simpleChat.sendMessage(this.textField.getText());
+        this.textField.setText("");
     }
 
     @FXML
@@ -46,9 +48,11 @@ public class Controller {
     }
 
     public void setSimpleChat(SimpleChat simpleChat) {
+        this.simpleChat = simpleChat;
     }
 
     public void updateTextAreaWithText(String text) {
+        this.textArea.setText(text);
     }
 
     public void addUser(String user) {

@@ -1,15 +1,16 @@
 package simplechat.server;
 
+import org.apache.commons.cli.*;
 import simplechat.communication.socket.server.SimpleChatServer;
 
-import org.apache.commons.cli.*;
-
+import java.io.IOException;
+import java.net.Socket;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.logging.Logger;
 import java.util.logging.ConsoleHandler;
+import java.util.logging.Logger;
 
 import static java.util.logging.Level.*;
 
@@ -17,6 +18,7 @@ import static java.util.logging.Level.*;
  * The Server Class choosing the communication framework and user interface
  *
  * @author Michael Borko  {@literal <mborko@tgm.ac.at>}
+ * @author David Langheiter {@literal <david@langheiter.com}
  * @version 1.0
  */
 public class SimpleChat {
@@ -107,19 +109,21 @@ public class SimpleChat {
      */
     public void listen() {
         serverLogger.log(INFO, "Initiating SimpleChatServer ...");
+        this.server.start();
     }
 
     /**
      * Gracefully shutdown of server Thread calling {@link SimpleChatServer#shutdown()}
      */
     public void stop() {
+        this.server.shutdown();
     }
 
     /**
      * @return checks if server Thread is still alive
      */
     public boolean isConnected() {
-        return false;
+        return this.server.isAlive();
     }
 
     /**
@@ -129,6 +133,10 @@ public class SimpleChat {
      */
     public void sendMessage(String message) {
         serverLogger.log(INFO, "UI gave me this message: " + message);
+        if(this.isConnected()) {
+            this.server.send(message);
+            this.sentMessages.add(message);
+        }
     }
 
     /**
@@ -139,6 +147,10 @@ public class SimpleChat {
      */
     public void sendMessage(String message, String chatName) {
         serverLogger.log(INFO, "UI gave me this message: " + message + " for this user: " + chatName);
+        if(this.isConnected()) {
+            this.server.send(message, chatName);
+            this.sentMessages.add(message);
+        }
     }
 
     /**
@@ -147,6 +159,9 @@ public class SimpleChat {
      * @param message Message sent by Client
      */
     public void incomingMessage(String message) {
+        serverLogger.log(INFO, "Socket gave me this message: " + message);
+        this.receivedMessages.add(message);
+        this.controller.updateTextAreaWithText(String.join("\n", this.receivedMessages));
     }
 
     /**
@@ -166,8 +181,20 @@ public class SimpleChat {
      * or an adapted new name (e.g. Franz#1)
      */
     public synchronized String addClient(String chatName) {
-        String name = chatName.equals("") ? "Client" : chatName;
-        return name;
+        boolean unique = !chatName.equals("");
+        if(unique) {
+            unique = !users.contains(chatName);
+        }
+        if(!unique) {
+            for(int i = 0;;i++) {
+                chatName = "Client#" + i;
+                if(!users.contains(chatName)) {
+                    break;
+                }
+            }
+        }
+        users.add(chatName);
+        return chatName;
     }
 
     /**
@@ -179,6 +206,9 @@ public class SimpleChat {
      * or an adapted new name (e.g. Franz#1)
      */
     public synchronized String renameClient(String oldChatName, String newChatName) {
+        if(users.remove(oldChatName)) {
+            return this.addClient(newChatName);
+        }
         return null;
     }
 
@@ -190,6 +220,10 @@ public class SimpleChat {
      * @param chatName Client which will be removed from Userlist
      */
     public void removeClient(String chatName) {
+        serverLogger.log(INFO, "Remove Client: " + chatName);
+        if(this.users.remove(chatName)) {
+            this.controller.removeUser(chatName);
+        }
     }
 
     /**
@@ -199,6 +233,8 @@ public class SimpleChat {
      * @param chatName Client which will be informed of shutdown
      */
     public void shutdownClient(String chatName) {
+        server.removeClient(chatName);
+        removeClient(chatName);
     }
 
     /**
