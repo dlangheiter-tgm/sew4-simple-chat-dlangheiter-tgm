@@ -1,11 +1,10 @@
 package simplechat.client;
 
+import org.apache.commons.cli.*;
 import simplechat.communication.socket.client.SimpleChatClient;
 
-import org.apache.commons.cli.*;
-
-import java.util.logging.Logger;
 import java.util.logging.ConsoleHandler;
+import java.util.logging.Logger;
 
 import static java.util.logging.Level.*;
 
@@ -61,7 +60,8 @@ public class SimpleChat {
             port = line.getOptionValue("p") != null ? Integer.parseInt(line.getOptionValue("p")) : null;
 
             boolean verbose = line.hasOption("v");
-            if (verbose) ch.setLevel(ALL);
+            if (verbose)
+                ch.setLevel(ALL);
 
             clientLogger.log(INFO, "Parameters set by user: " +
                     "host=" + host + " port=" + port + " chatName=" + chatName + " verbose=" + verbose);
@@ -101,19 +101,21 @@ public class SimpleChat {
      */
     public void listen() {
         clientLogger.log(INFO, "Initiating SimpleChatClient ...");
+        this.client.start();
     }
 
     /**
      * Gracefully shutdown of client Thread calling {@link SimpleChatClient#shutdown()}
      */
     public void stop() {
+        this.client.shutdown();
     }
 
     /**
      * @return checks if client Thread is still alive
      */
     public boolean isConnected() {
-        return false;
+        return this.client.isListening();
     }
 
     /**
@@ -123,6 +125,9 @@ public class SimpleChat {
      */
     public void sendMessage(String message) {
         clientLogger.log(INFO, "UI gave me this message: " + message);
+        if(this.isConnected()) {
+            this.client.send(message);
+        }
     }
 
     /**
@@ -132,7 +137,10 @@ public class SimpleChat {
      * @param chatName Name of receiver
      */
     public void sendMessage(String message, String chatName) {
-        clientLogger.log(INFO, "UI gave me this message: " + message + " for this user: " + chatName);
+        if(this.isConnected()) {
+            clientLogger.log(INFO, "UI gave me this message: " + message + " for this user: " + chatName);
+            this.client.send(message, chatName);
+        }
     }
 
     /**
@@ -142,6 +150,9 @@ public class SimpleChat {
      * @param message Message sent by Server
      */
     public void incomingMessage(String message) {
+        if(this.controller != null) {
+            this.controller.updateTextAreaWithText(message);
+        }
     }
 
 }

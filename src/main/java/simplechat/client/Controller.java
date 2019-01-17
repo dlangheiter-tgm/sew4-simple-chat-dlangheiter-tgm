@@ -29,21 +29,31 @@ public class Controller {
 
     @FXML
     protected void handleMessageButtonAction(ActionEvent event) {
+        event.consume();
+        this.sendMessage();
     }
 
     public void initialize() {
     }
 
     public void stop() {
+        this.simpleChat.stop();
     }
 
     public void setSimpleChat(SimpleChat simpleChat) {
+        this.simpleChat = simpleChat;
     }
 
     public void updateTextAreaWithText(String text) {
+        this.textArea.setText(this.textArea.getText() + "\n" + text);
     }
 
     public void sendMessage() {
+        String msg = this.textField.getText();
+        if(!msg.trim().isEmpty()) {
+            this.simpleChat.sendMessage(msg);
+            this.textField.setText("");
+        }
     }
 
     Runnable clearText = () -> {

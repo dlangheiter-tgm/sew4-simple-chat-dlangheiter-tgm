@@ -49,6 +49,7 @@ public class SimpleChatClient extends Thread {
         if (name != null) this.name = name;
         if (host != null) this.host = host;
         if (port != null) this.port = port;
+        if (host != null && port != null) this.socketAddress = new InetSocketAddress(host, port);
         this.client = client;
         SimpleChat.clientLogger.log(INFO, "Init: host=" + this.host + " port="
                 + this.port + " chatName=" + this.name);
@@ -65,6 +66,24 @@ public class SimpleChatClient extends Thread {
      * the {@link #shutdown()} method will be called.
      */
     public void run() {
+        try {
+            this.socket = new Socket();
+            // Conenct to server with timeout
+            this.socket.connect(this.socketAddress, 2000);
+            // Setup input and output
+            this.in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
+            this.out = new PrintWriter(this.socket.getOutputStream(), true);
+            // Set listening to true
+            this.listening = true;
+            // Send server the chatname
+            this.send("!CHATNAME " + this.name);
+            while(this.listening && (this.currentMessage = this.in.readLine()) != null) {
+                this.received();
+            }
+        } catch (IOException e) {
+            SimpleChat.clientLogger.log(SEVERE, "Exception in socket thread: " + e.getMessage());
+            this.shutdown();
+        }
     }
 
     /**
@@ -79,6 +98,20 @@ public class SimpleChatClient extends Thread {
      * the message will be passed to {@link simplechat.client.SimpleChat#incomingMessage(String)}
      */
     private void received() {
+        if(this.currentMessage.startsWith("!")) {
+            SimpleChat.clientLogger.log(INFO, "Received command from server: " + this.currentMessage);
+            String[] cmd = this.currentMessage.split(" ");
+            switch (MessageProtocol.getCommand(cmd[0])) {
+                case EXIT:
+                    this.listening = false;
+                    this.shutdown();
+                default:
+                    SimpleChat.clientLogger.log(WARNING, "Unknown command: " + this.currentMessage);
+            }
+        } else {
+            SimpleChat.clientLogger.log(INFO, "Received msg from server: " + this.currentMessage);
+            client.incomingMessage(this.currentMessage);
+        }
     }
 
     /**
@@ -87,6 +120,13 @@ public class SimpleChatClient extends Thread {
      * @param message Public message for server intercommunication
      */
     public void send(String message) {
+        SimpleChat.clientLogger.log(INFO, "Send message to server: " + message);
+        try {
+            out.println(message);
+        } catch (Exception e) {
+            SimpleChat.clientLogger.log(SEVERE, "Error while sending message: " + e);
+            this.shutdown();
+        }
     }
 
     /**
@@ -96,6 +136,8 @@ public class SimpleChatClient extends Thread {
      * @param chatName Name of receiver
      */
     public void send(String message, String chatName) {
+        SimpleChat.clientLogger.log(INFO, "Send private message to " + chatName + ": " + message);
+        this.send(MessageProtocol.getMessage(PRIVATE) + " (" + chatName + ") " + message);
     }
 
     /**
@@ -106,6 +148,10 @@ public class SimpleChatClient extends Thread {
      */
     public void shutdown() {
         SimpleChat.clientLogger.log(INFO, "Shutting down Client ... listening=" + listening);
+        if(this.listening) {
+            this.listening = false;
+            this.send(MessageProtocol.getMessage(EXIT));
+        }
     }
 
     /**
