@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static java.util.logging.Level.*;
 import static simplechat.communication.MessageProtocol.Commands.EXIT;
@@ -116,14 +118,15 @@ public class SimpleChatServer extends Thread {
      * @param message  MessageText with sender ChatName
      * @param receiver ChatName of receiving Client
      */
-    public void send(String message, Object receiver) {
-        this.getWorker(receiver).send(message);
+    public void send(String message, String receiver) {
+        ClientWorker cw = this.getWorker(receiver);
+        if(cw != null) cw.send(message);
+        else SimpleChat.serverLogger.log(WARNING, "Could not send message to '" + receiver + "'. Client was not found");
     }
 
-    private ClientWorker getWorker(Object chatName) {
-        String sName = chatName.toString();
+    private ClientWorker getWorker(String chatName) {
         for (Map.Entry<ClientWorker, String> e : this.workerList.entrySet()) {
-            if (e.getValue().equals(sName)) {
+            if (e.getValue().equals(chatName)) {
                 return e.getKey();
             }
         }
@@ -226,7 +229,7 @@ class ClientWorker implements Runnable {
                 if (message.startsWith("!")) {
                     String[] split = message.split(" ", 2);
                     String cmd = split[0];
-                    String param = split.length > 1 ? split[1] : "";
+                    String param = message.substring(cmd.length() + 1);
                     MessageProtocol.Commands command;
                     try {
                         command = MessageProtocol.getCommand(cmd);
@@ -243,6 +246,23 @@ class ClientWorker implements Runnable {
                                 this.callback.setName(split[1], this);
                             }
                             break;
+                        case PRIVATE:
+                            final String regex = "^\\{(?<clients>(?:\\S+,? ?)+)\\} ?(?<text>.*)$";
+                            SimpleChat.serverLogger.log(INFO, "Param is: '" + param + "'");
+                            final Matcher matcher = Pattern.compile(regex).matcher(param);
+                            if(matcher.find()) {
+                                String text = matcher.group("text");
+                                String clientsString = matcher.group("clients");
+                                String[] clients = clientsString.split(",");
+                                for (String client : clients) {
+                                    this.callback.send(text, client.trim());
+                                }
+                            } else {
+                                SimpleChat.serverLogger.log(WARNING, "Malformed private command: " + param);
+                            }
+                            break;
+                        default:
+                            SimpleChat.serverLogger.log(WARNING, "Unhandled command: " + command);
                     }
                 } else {
                     this.callback.received(message, this);
