@@ -169,6 +169,16 @@ public class SimpleChatServer extends Thread {
      * active ClientWorker Threads.
      */
     public void shutdown() {
+        this.executorService.shutdown();
+        for(ClientWorker cw : this.workerList.keySet()) {
+            cw.shutdown();
+        }
+        try {
+            this.serverSocket.close();
+        } catch (IOException e) {
+            SimpleChat.serverLogger.log(SEVERE, "Exception while closing serverSocket: " + e);
+        }
+        this.executorService.shutdownNow();
     }
 }
 
@@ -236,7 +246,7 @@ class ClientWorker implements Runnable {
             }
             this.out.close();
         } catch (IOException e) {
-
+            SimpleChat.serverLogger.log(INFO, "Exception in reading line.");
         } finally {
             this.callback.removeClient(this);
         }
