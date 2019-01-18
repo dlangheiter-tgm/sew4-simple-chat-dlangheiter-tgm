@@ -40,7 +40,11 @@ public class Controller {
 
     @FXML
     protected void handleRemoveButtonAction(ActionEvent event) {
-        // TODO: handleRemoveButtonAction
+        event.consume();
+        Object selected = listView.getSelectionModel().getSelectedItem();
+        if(selected != null) {
+            this.simpleChat.shutdownClient((String) selected);
+        }
     }
 
     public void initialize() {
