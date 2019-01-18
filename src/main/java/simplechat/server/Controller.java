@@ -1,9 +1,10 @@
 package simplechat.server;
 
+import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
@@ -11,7 +12,6 @@ import javafx.scene.text.Text;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class Controller {
 
@@ -33,18 +33,21 @@ public class Controller {
 
     @FXML
     protected void handleMessageButtonAction(ActionEvent event) {
+        event.consume();
         this.simpleChat.sendMessage(this.textField.getText());
         this.textField.setText("");
     }
 
     @FXML
     protected void handleRemoveButtonAction(ActionEvent event) {
+        // TODO: handleRemoveButtonAction
     }
 
     public void initialize() {
     }
 
     public void stop() {
+        this.simpleChat.stop();
     }
 
     public void setSimpleChat(SimpleChat simpleChat) {
@@ -52,13 +55,15 @@ public class Controller {
     }
 
     public void updateTextAreaWithText(String text) {
-        this.textArea.setText(text);
+        this.textArea.setText(this.textArea.getText() + "\n" + text);
     }
 
     public void addUser(String user) {
+        Platform.runLater(() -> this.listView.getItems().add(user));
     }
 
     public void removeUser(String user) {
+        Platform.runLater(() -> this.listView.getItems().remove(user));
     }
 
     Runnable clearText = () -> {
