@@ -136,6 +136,7 @@ public class SimpleChat {
         if(this.isConnected()) {
             this.server.send(message);
             this.sentMessages.add(message);
+            this.controller.updateTextAreaWithText(message);
         }
     }
 
@@ -161,7 +162,7 @@ public class SimpleChat {
     public void incomingMessage(String message) {
         serverLogger.log(INFO, "Socket gave me this message: " + message);
         this.receivedMessages.add(message);
-        this.controller.updateTextAreaWithText(String.join("\n", this.receivedMessages));
+        this.controller.updateTextAreaWithText(message);
     }
 
     /**
@@ -181,19 +182,18 @@ public class SimpleChat {
      * or an adapted new name (e.g. Franz#1)
      */
     public synchronized String addClient(String chatName) {
-        boolean unique = !chatName.equals("");
-        if(unique) {
-            unique = !users.contains(chatName);
-        }
-        if(!unique) {
+        chatName = chatName.equals("") ? "Client" : chatName;
+        if(this.users.contains(chatName)) {
             for(int i = 0;;i++) {
-                chatName = "Client#" + i;
-                if(!users.contains(chatName)) {
+                chatName = chatName + "#" + i;
+                if(!this.users.contains(chatName)) {
                     break;
                 }
             }
         }
+        serverLogger.log(INFO, "Add Client: " + chatName);
         users.add(chatName);
+        this.controller.addUser(chatName);
         return chatName;
     }
 
@@ -206,7 +206,12 @@ public class SimpleChat {
      * or an adapted new name (e.g. Franz#1)
      */
     public synchronized String renameClient(String oldChatName, String newChatName) {
-        if(users.remove(oldChatName)) {
+        serverLogger.log(INFO, "Rename Client from " + oldChatName + " to " + newChatName);
+        if(oldChatName.equals(newChatName)) {
+            return newChatName;
+        }
+        if(this.users.contains(oldChatName)) {
+            this.removeClient(oldChatName);
             return this.addClient(newChatName);
         }
         return null;
