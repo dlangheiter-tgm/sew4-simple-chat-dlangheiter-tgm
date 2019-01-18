@@ -3,18 +3,16 @@ package simplechat.communication.socket.client;
 import simplechat.client.SimpleChat;
 import simplechat.communication.MessageProtocol;
 
-import static simplechat.communication.MessageProtocol.Commands.*;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 
 import static java.util.logging.Level.*;
+import static simplechat.communication.MessageProtocol.Commands.EXIT;
+import static simplechat.communication.MessageProtocol.Commands.PRIVATE;
 
 /**
  * SimpleChatClient connects to SimpleChatServer with the choosen communication protocol and initiates a UI.
@@ -46,10 +44,14 @@ public class SimpleChatClient extends Thread {
      * @param client UserInterface callback reference for user interactions
      */
     public SimpleChatClient(String name, String host, Integer port, SimpleChat client) {
-        if (name != null) this.name = name;
-        if (host != null) this.host = host;
-        if (port != null) this.port = port;
-        if (host != null && port != null) this.socketAddress = new InetSocketAddress(host, port);
+        if (name != null)
+            this.name = name;
+        if (host != null)
+            this.host = host;
+        if (port != null)
+            this.port = port;
+        if (host != null && port != null)
+            this.socketAddress = new InetSocketAddress(host, port);
         this.client = client;
         SimpleChat.clientLogger.log(INFO, "Init: host=" + this.host + " port="
                 + this.port + " chatName=" + this.name);
@@ -68,7 +70,7 @@ public class SimpleChatClient extends Thread {
     public void run() {
         try {
             this.socket = new Socket();
-            // Conenct to server with timeout
+            // Connect to server with timeout
             this.socket.connect(this.socketAddress, 2000);
             // Setup input and output
             this.in = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
@@ -77,7 +79,7 @@ public class SimpleChatClient extends Thread {
             this.listening = true;
             // Send server the chatname
             this.send("!CHATNAME " + this.name);
-            while(this.listening && (this.currentMessage = this.in.readLine()) != null) {
+            while (this.listening && (this.currentMessage = this.in.readLine()) != null) {
                 this.received();
             }
         } catch (IOException e) {
@@ -98,15 +100,23 @@ public class SimpleChatClient extends Thread {
      * the message will be passed to {@link simplechat.client.SimpleChat#incomingMessage(String)}
      */
     private void received() {
-        if(this.currentMessage.startsWith("!")) {
+        if (this.currentMessage.startsWith("!")) {
             SimpleChat.clientLogger.log(INFO, "Received command from server: " + this.currentMessage);
-            String[] cmd = this.currentMessage.split(" ");
-            switch (MessageProtocol.getCommand(cmd[0])) {
+            String[] split = this.currentMessage.trim().split(" ");
+            MessageProtocol.Commands cmd;
+            try {
+                cmd = MessageProtocol.getCommand(split[0]);
+            } catch (IllegalArgumentException e) {
+                SimpleChat.clientLogger.log(WARNING, "Unknown command: " + this.currentMessage);
+                return;
+            }
+            switch (cmd) {
                 case EXIT:
                     this.listening = false;
                     this.shutdown();
+                    break;
                 default:
-                    SimpleChat.clientLogger.log(WARNING, "Unknown command: " + this.currentMessage);
+                    SimpleChat.clientLogger.log(WARNING, "Unhandled command: " + cmd);
             }
         } else {
             SimpleChat.clientLogger.log(INFO, "Received msg from server: " + this.currentMessage);
@@ -148,9 +158,18 @@ public class SimpleChatClient extends Thread {
      */
     public void shutdown() {
         SimpleChat.clientLogger.log(INFO, "Shutting down Client ... listening=" + listening);
-        if(this.listening) {
+        if (this.listening) {
             this.listening = false;
             this.send(MessageProtocol.getMessage(EXIT));
+        }
+        this.currentMessage = "Server disconnected.";
+        this.received();
+        try {
+            this.out.close();
+            this.in.close();
+            this.socket.close();
+        } catch (IOException e) {
+            SimpleChat.clientLogger.log(WARNING, "Error while closing connection: " + e.getMessage());
         }
     }
 
