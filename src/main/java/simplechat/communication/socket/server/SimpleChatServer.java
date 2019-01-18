@@ -15,8 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static java.util.logging.Level.INFO;
-import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.*;
 import static simplechat.communication.MessageProtocol.Commands.EXIT;
 
 
@@ -76,8 +75,11 @@ public class SimpleChatServer extends Thread {
                 workerList.put(cw, name);
                 executorService.execute(cw);
             } catch (IOException e) {
-                SimpleChat.serverLogger.log(SEVERE, "Error on acception client.");
-                e.printStackTrace();
+                // Only print if we are still listening, else we wanted to close the connection anyway.
+                if(!this.listening) {
+                    SimpleChat.serverLogger.log(SEVERE, "Error on accept client: " + e.getMessage());
+                    e.printStackTrace();
+                }
             }
         }
         SimpleChat.serverLogger.log(INFO, "... exited Thread ...");
@@ -169,6 +171,7 @@ public class SimpleChatServer extends Thread {
      * active ClientWorker Threads.
      */
     public void shutdown() {
+        this.listening = false;
         this.executorService.shutdown();
         for(ClientWorker cw : this.workerList.keySet()) {
             cw.shutdown();
@@ -232,6 +235,7 @@ class ClientWorker implements Runnable {
                     }
                     switch (command) {
                         case EXIT:
+                            this.listening = false;
                             this.shutdown();
                             break;
                         case CHATNAME:
@@ -259,9 +263,17 @@ class ClientWorker implements Runnable {
      * Finally we are closing all open resources.
      */
     void shutdown() {
+        SimpleChat.serverLogger.log(INFO, "Shutting down ClientWorker ... listening=" + listening);
         if(listening) {
-            SimpleChat.serverLogger.log(INFO, "Shutting down ClientWorker ... listening=" + listening);
             this.send(MessageProtocol.getMessage(EXIT));
+            this.listening = false;
+        }
+        try {
+            this.out.close();
+            this.in.close();
+            this.client.close();
+        } catch (IOException e) {
+            SimpleChat.serverLogger.log(WARNING, "Error while closing client connection: " + e.getMessage());
         }
     }
 
