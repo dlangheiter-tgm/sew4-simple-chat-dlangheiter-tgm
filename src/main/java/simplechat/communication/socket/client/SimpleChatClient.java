@@ -1,5 +1,6 @@
 package simplechat.communication.socket.client;
 
+import javafx.application.Platform;
 import simplechat.client.SimpleChat;
 import simplechat.communication.MessageProtocol;
 
@@ -86,6 +87,7 @@ public class SimpleChatClient extends Thread {
             SimpleChat.clientLogger.log(SEVERE, "Exception in socket thread: " + e.getMessage());
             this.shutdown();
         }
+        Platform.exit();
     }
 
     /**
@@ -106,6 +108,7 @@ public class SimpleChatClient extends Thread {
             MessageProtocol.Commands cmd;
             try {
                 cmd = MessageProtocol.getCommand(split[0]);
+                SimpleChat.clientLogger.log(WARNING, "Command: " + cmd);
             } catch (IllegalArgumentException e) {
                 SimpleChat.clientLogger.log(WARNING, "Unknown command: " + this.currentMessage);
                 return;
@@ -135,7 +138,6 @@ public class SimpleChatClient extends Thread {
             out.println(message);
         } catch (Exception e) {
             SimpleChat.clientLogger.log(SEVERE, "Error while sending message: " + e);
-            this.shutdown();
         }
     }
 

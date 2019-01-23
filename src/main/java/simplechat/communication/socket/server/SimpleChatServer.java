@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -78,7 +79,7 @@ public class SimpleChatServer extends Thread {
                 executorService.execute(cw);
             } catch (IOException e) {
                 // Only print if we are still listening, else we wanted to close the connection anyway.
-                if(!this.listening) {
+                if(this.listening) {
                     SimpleChat.serverLogger.log(SEVERE, "Error on accept client: " + e.getMessage());
                     e.printStackTrace();
                 }
@@ -152,7 +153,10 @@ public class SimpleChatServer extends Thread {
      * @param worker ClientWorker which should be removed
      */
     void removeClient(ClientWorker worker) {
-        this.server.removeClient(workerList.get(worker));
+        String chatName = workerList.get(worker);
+        if(chatName != null) {
+            this.server.removeClient(chatName);
+        }
         worker.shutdown();
         this.workerList.remove(worker);
     }
@@ -229,16 +233,16 @@ class ClientWorker implements Runnable {
                 if (message.startsWith("!")) {
                     String[] split = message.split(" ", 2);
                     String cmd = split[0];
-                    String param = message.substring(cmd.length() + 1);
+                    String param = split.length > 1 ? split[1] : "";
                     MessageProtocol.Commands command;
                     try {
                         command = MessageProtocol.getCommand(cmd);
+                        SimpleChat.serverLogger.log(WARNING, "Command: " + command);
                     } catch (IllegalArgumentException e) {
                         continue;
                     }
                     switch (command) {
                         case EXIT:
-                            this.listening = false;
                             this.shutdown();
                             break;
                         case CHATNAME:

@@ -115,7 +115,7 @@ public class SimpleChat {
      * @return checks if client Thread is still alive
      */
     public boolean isConnected() {
-        return this.client.isListening();
+        return this.client.isAlive();
     }
 
     /**
