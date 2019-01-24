@@ -59,7 +59,10 @@ public class Controller {
     }
 
     public void updateTextAreaWithText(String text) {
-        Platform.runLater(() -> this.textArea.setText(this.textArea.getText() + "\n" + text));
+        Platform.runLater(() -> {
+            this.textArea.setText(this.textArea.getText() + "\n" + text);
+            this.textArea.setScrollTop(Double.MAX_VALUE);
+        });
     }
 
     public void addUser(String user) {
