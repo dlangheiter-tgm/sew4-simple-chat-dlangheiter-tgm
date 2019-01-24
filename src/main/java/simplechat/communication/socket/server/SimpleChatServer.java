@@ -125,6 +125,11 @@ public class SimpleChatServer extends Thread {
         else SimpleChat.serverLogger.log(WARNING, "Could not send message to '" + receiver + "'. Client was not found");
     }
 
+    /**
+     * Finds a ClientWorker by it's chatname
+     * @param chatName Chatname to find the ClientWorker to
+     * @return The ClientWorker if found else null
+     */
     private ClientWorker getWorker(String chatName) {
         for (Map.Entry<ClientWorker, String> e : this.workerList.entrySet()) {
             if (e.getValue().equals(chatName)) {
@@ -153,6 +158,9 @@ public class SimpleChatServer extends Thread {
      * @param worker ClientWorker which should be removed
      */
     void removeClient(ClientWorker worker) {
+        if(worker == null) {
+            return;
+        }
         String chatName = workerList.get(worker);
         if(chatName != null) {
             this.server.removeClient(chatName);
