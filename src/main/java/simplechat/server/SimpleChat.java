@@ -182,9 +182,9 @@ public class SimpleChat {
      * or an adapted new name (e.g. Franz#1)
      */
     public synchronized String addClient(String chatName) {
-        chatName = chatName.equals("") ? "Client" : chatName;
+        chatName = chatName.isEmpty() ? "Client" : chatName;
         if(this.users.contains(chatName)) {
-            for(int i = 0;;i++) {
+            for(int i = 1;;i++) {
                 chatName = chatName + "#" + i;
                 if(!this.users.contains(chatName)) {
                     break;
