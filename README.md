@@ -27,4 +27,20 @@ Die detaillierte [Aufgabenstellung](TASK.md) beschreibt die notwendigen Schritte
 * removeClient(String): remove client by ChatName
 * shutdown: Shutdown all clients an closes thread.
 
+### SimpleChat (Server)
+* sendMessage(String): Sends message to all users when connected
+* sendMessage(String, String): Sends message to specified user
+* incomingMessage: Saves the message and displayes it on GUI
+* addClient: Adds client to `users` and sends it to GUI. Also finds unique username
+* renameClient: Renames a client
+* removeClient: removes a client
+* shutdownClient: Method for GUI to shutdown Client
+
+### Controller (Server)
+events are consumed to stop further execution of handlers.  
+When modifying the ListView or other GUI elements you need to wrap in in 
+`Platform.runLater()` to be on the GUI thread.
+
+
+
 ## Quellen
