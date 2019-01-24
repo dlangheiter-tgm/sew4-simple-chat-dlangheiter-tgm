@@ -17,6 +17,8 @@
               prefHeight="800"
               prefWidth="1200"
               editable="false"
+              GridPane.hgrow="ALWAYS"
+              GridPane.vgrow="ALWAYS"
               GridPane.columnIndex="0"
               GridPane.rowIndex="0"
               GridPane.columnSpan="2"/>
