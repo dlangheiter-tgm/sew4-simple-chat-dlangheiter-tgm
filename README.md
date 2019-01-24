@@ -5,14 +5,14 @@ Die detaillierte [Aufgabenstellung](TASK.md) beschreibt die notwendigen Schritte
 
 ## Implementierung
 
+
 ### ClientWorker 
-* ClientWorker: create Input/Output stream
-* run: Wärend listeneing messages bekommen und testen ob ein Command
-oder eine Nachricht und ruft die jeweiligen methoden auf
-* shutdown: Send !STOP over socket.
-* send: out.println
+* ClientWorker: create Input/Output stream. Don't forget autoFlush: true
+* run: while listening reads line from input stream and checks if it is 
+    a cmd and executed else it will be given to `SimpleChatServer`
+* shutdown: Send !STOP over socket and closes all resources.
+* send: out.println, if Exception shutdown ClientWorker
 
 ### SimpleChatServer
-
 
 ## Quellen

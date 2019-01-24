@@ -228,8 +228,8 @@ class ClientWorker implements Runnable {
     @Override
     public void run() {
         try {
-            while (this.listening) {
-                String message = this.in.readLine();
+            String message;
+            while ((message = this.in.readLine()) != null && this.listening) {
                 if (message.startsWith("!")) {
                     String[] split = message.split(" ", 2);
                     String cmd = split[0];
@@ -307,6 +307,11 @@ class ClientWorker implements Runnable {
      * @param message MessageText for Client
      */
     void send(String message) {
-        this.out.println(message);
+        try {
+            this.out.println(message);
+        } catch (Exception e) {
+            SimpleChat.serverLogger.log(SEVERE, "Exception while sending: " + e.getMessage());
+            this.shutdown();
+        }
     }
 }
