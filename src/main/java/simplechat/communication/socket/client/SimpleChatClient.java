@@ -51,8 +51,7 @@ public class SimpleChatClient extends Thread {
             this.host = host;
         if (port != null)
             this.port = port;
-        if (host != null && port != null)
-            this.socketAddress = new InetSocketAddress(host, port);
+        this.socketAddress = new InetSocketAddress(this.host, this.port);
         this.client = client;
         SimpleChat.clientLogger.log(INFO, "Init: host=" + this.host + " port="
                 + this.port + " chatName=" + this.name);
@@ -170,7 +169,7 @@ public class SimpleChatClient extends Thread {
             this.out.close();
             this.in.close();
             this.socket.close();
-        } catch (IOException e) {
+        } catch (Exception e) {
             SimpleChat.clientLogger.log(WARNING, "Error while closing connection: " + e.getMessage());
         }
     }
