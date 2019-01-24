@@ -41,6 +41,26 @@ events are consumed to stop further execution of handlers.
 When modifying the ListView or other GUI elements you need to wrap in in 
 `Platform.runLater()` to be on the GUI thread.
 
+### MessageProtocol
 
+Helpsers for messaging and Commands
+
+### SimpleChatClient
+
+* run: Initialises the Socket and listens for new messages
+* received: Analyzes the received message for commands or gives it to `SimpleChat`
+* send(String): Sends message to server
+* send(String, String): Sends private message to other user
+* shutdown: disconects from the server
+
+### SimpleChat (Client)
+
+Mostly passthrough from `SimpleChatClient` to Controller
+
+### Controller (Client)
+
+Sends messages on Button Click and updates textArea with new text. This update runs on the GUI thread by using `Platform.runLater()`
 
 ## Quellen
+
+https://stackoverflow.com/questions/21083945/how-to-avoid-not-on-fx-application-thread-currentthread-javafx-application-th
